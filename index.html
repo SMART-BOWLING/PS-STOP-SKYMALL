@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Учет ошибок по машинам</title>
+  <title>Учет ошибок SKYMALL</title>
   <link rel="icon" type="image/png" href="https://i.postimg.cc/dtSpKx0W/1.png" />
   
   <!-- Preload и асинхронная загрузка -->
@@ -636,8 +636,8 @@
     <div class="site-name" onclick="toggleSiteNameDropdown()">
       SKYMALL
       <div class="site-name-dropdown" id="siteNameDropdown">
-        <a href="https://smart-bowling.github.io/SMB-SKYMALL/" class="dropdown-button">
-          <span>SKYMALL</span>
+        <a href="https://smart-bowling.github.io/PS-STOP-BB/">BB</a>
+        <a href="https://smart-bowling.github.io/PS-STOP-KH/">LUCKY STRIKE KH</a>
         </a>
       </div>
     </div>
@@ -713,6 +713,8 @@
             <th>12</th>
             <th>13</th>
             <th>14</th>
+            <th>15</th>
+            <th>16</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -734,10 +736,10 @@
     
     const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxmH2sES_AjIjKheiZoGxLt-SVXKJSD0SZmlNukJlMio2JaTHLULdqKkIas8mtHeQXI/exec';
 
-    let machineErrors = Array(14).fill(0);
-    let machineFPS = Array(14).fill(0);
+    let machineErrors = Array(16).fill(0);
+    let machineFPS = Array(16).fill(0);
     let selectedDate = new Date().toISOString().split('T')[0];
-    let originalErrors = Array(14).fill(0);
+    let originalErrors = Array(16).fill(0);
     
     let errorsChart = null;
     let fpsChart = null;
@@ -811,7 +813,7 @@
       const grid = document.getElementById('machinesGrid');
       let html = '';
       
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 16; i++) {
         html += `
           <div class="machine-cell" onclick="incrementMachine(${i})">
             <div class="machine-number">LANE ${i + 1}</div>
@@ -928,14 +930,27 @@
 
     function applyCachedData(data) {
       if (data.errors) {
-        machineErrors = data.errors;
-        originalErrors = [...data.errors]; // ГЛУБОКОЕ КОПИРОВАНИЕ
+        // Если данных меньше чем 16, дополняем нулями
+        if (data.errors.length < 16) {
+          machineErrors = data.errors.concat(Array(16 - data.errors.length).fill(0));
+        } else {
+          machineErrors = data.errors.slice(0, 16);
+        }
+        originalErrors = [...machineErrors]; // ГЛУБОКОЕ КОПИРОВАНИЕ
         console.log('Применяем кэшированные ошибки:', machineErrors);
         forceDisplayUpdate();
       }
       
       if (data.chartData) {
-        machineFPS = data.chartData.fps || Array(14).fill(0);
+        if (data.chartData.fps) {
+          if (data.chartData.fps.length < 16) {
+            machineFPS = data.chartData.fps.concat(Array(16 - data.chartData.fps.length).fill(0));
+          } else {
+            machineFPS = data.chartData.fps.slice(0, 16);
+          }
+        } else {
+          machineFPS = Array(16).fill(0);
+        }
       }
       
       if (data.totalStats) {
@@ -949,8 +964,8 @@
     }
 
     function applyDefaultData() {
-      machineErrors = Array(14).fill(0);
-      originalErrors = Array(14).fill(0);
+      machineErrors = Array(16).fill(0);
+      originalErrors = Array(16).fill(0);
       console.log('Применяем данные по умолчанию');
       forceDisplayUpdate();
       isDataLoaded = true;
@@ -1107,14 +1122,16 @@
     }
 
     function calculateMonthlyErrors() {
-      const monthlyErrors = Array(14).fill(0);
+      const monthlyErrors = Array(16).fill(0);
       const tableRows = document.querySelectorAll('#tableBody tr');
       
       tableRows.forEach(row => {
         const cells = row.querySelectorAll('td');
         for (let i = 1; i < cells.length; i++) {
           const errorCount = parseInt(cells[i].textContent) || 0;
-          monthlyErrors[i - 1] += errorCount;
+          if (i - 1 < 16) {
+            monthlyErrors[i - 1] += errorCount;
+          }
         }
       });
       
@@ -1145,7 +1162,15 @@
         }
         
         if (data.chartData) {
-          machineFPS = data.chartData.fps || Array(14).fill(0);
+          if (data.chartData.fps) {
+            if (data.chartData.fps.length < 16) {
+              machineFPS = data.chartData.fps.concat(Array(16 - data.chartData.fps.length).fill(0));
+            } else {
+              machineFPS = data.chartData.fps.slice(0, 16);
+            }
+          } else {
+            machineFPS = Array(16).fill(0);
+          }
         }
         
         if (data.totalStats) {
@@ -1171,7 +1196,10 @@
         dayCell.style.fontWeight = 'bold';
         tr.appendChild(dayCell);
         
-        row.errors.forEach(error => {
+        // Обрабатываем только первые 16 колонок ошибок
+        const errorsToShow = row.errors.slice(0, 16);
+        
+        errorsToShow.forEach(error => {
           const errorCell = document.createElement('td');
           if (error !== 0) {
             errorCell.textContent = error;
@@ -1195,7 +1223,7 @@
         dayCell.style.fontWeight = 'bold';
         row.appendChild(dayCell);
         
-        for (let j = 0; j < 14; j++) {
+        for (let j = 0; j < 16; j++) {
           const dataCell = document.createElement('td');
           const value = Math.floor(Math.random() * 10);
           if (value !== 0) {
@@ -1209,7 +1237,7 @@
     }
 
     function createCharts() {
-      const machineNumbers = Array.from({length: 14}, (_, i) => `${i + 1}`);
+      const machineNumbers = Array.from({length: 16}, (_, i) => `${i + 1}`);
       
       if (errorsChart) errorsChart.destroy();
       if (fpsChart) fpsChart.destroy();
